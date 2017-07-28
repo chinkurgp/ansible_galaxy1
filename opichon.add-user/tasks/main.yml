@@ -1,0 +1,27 @@
+---
+- name: Ensure user is present
+  become: yes
+  user:
+    name: "{{ user }}"
+    state: present
+    uid: 1001
+
+- name: Ensure you'll be able to deploy later on
+  become: true
+  authorized_key:
+    user: "{{ user }}"
+    key: "{{ lookup('file', public_key) }}"
+    state: present
+    manage_dir: yes
+
+- name: Identify groups
+  shell: "getent group | cut -d: -f1"
+  register: etc_groups
+
+- name: Add user to groups
+  become: yes
+  user:
+    name: "{{ user }}"
+    groups: "{{ item }}"
+  when: '"{{ item }}" in etc_groups.stdout_lines'
+  with_items: "{{ user_groups }}"
